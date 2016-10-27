@@ -1,0 +1,643 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Be HAPI</title>
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/black.css">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+  </head>
+  <body>
+
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h1 style="text-transform:none">Be HAPI</h1>
+          <p><a href="http://hapijs.com">http://hapijs.com</a></p>
+        </section>
+
+        <section>
+          <h2>Qu'es ce qu'HAPI ?</h2>
+          <ul>
+            <li><strong style="color: red">H</strong>TTP <strong style="color: red"> API </strong> server</li>
+            <li>Développé par Walmart & Eran Hammer</li>
+            <li>Initialement basé sur Express</li>
+            <li>jusqu'au moment Express ne répondait plus à leurs besoins ...</li>
+          </ul>
+
+          <p><a href="https://hueniverse.com/2012/12/20/hapi-a-prologue/"><em>Prologue d'HAPI</em> par E. Hammer</a></p>
+        </section>
+
+        <section>
+          <h2>Paradigmes</h2>
+          <ul>
+            <li>Sécurité</li>
+            <li>Modularité</li>
+            <li>Scalabilité</li>
+            <li>"configuration vs. code"</li>
+            <li>"business logic must be isolated from the transport layer"</li>
+            <li>"native node constructs like buffers and stream should be supported as first class objects"</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>et aujourd'hui ...</h2>
+          <ul>
+            <li>Fiable & stable => Walmart Black friday</li>
+            <li>Utilisé par des grands comptes<br>
+              <div style="margin-top: 15px; padding-left:15px; background: white; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);">
+                <img data-src="img/logo-disney.png" alt="Disney" style="max-width:20%; max-height:20%; background: transparent; border: 0; box-shadow: none;">
+                <img data-src="img/logo-paypal.png" alt="Paypal" style="max-width:25%; max-height:25%; background: transparent; border: 0; box-shadow: none;">
+                <img data-src="img/logo-mozilla.png" alt="Mozilla" style="max-width:25%; max-height:25%; background: transparent; border: 0; box-shadow: none;">
+                <img data-src="img/logo-npm.png" alt="NPM" style="max-width:22%; max-height:22%; background: transparent; border: 0; box-shadow: none;">
+                <img data-src="img/logo-yahoo.png" alt="Yahoo" style="max-width:25%; max-height:25%; background: transparent; border: 0; box-shadow: none; margin: 15px;">
+                <img data-src="img/logo-auth0.png" alt="Auth0" style="max-width:25%; max-height:25%; background: transparent; border: 0; box-shadow: none; margin: 15px;">
+                <img data-src="img/logo-walmart.png" alt="Wallmart" style="max-width:25%; max-height:25%; background: transparent; border: 0; box-shadow: none; margin: 15px;">
+                <img data-src="img/logo-nsp.png" alt="Node Security Project" style="max-width:10%; max-height:10%; background: transparent; border: 0; box-shadow: none; margin: 15px;">
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Getting started</h2>
+
+          <pre><code class="hljs" data-trim contenteditable>
+var Hapi = require('hapi');
+
+var server = new Hapi.Server();
+
+server.connection({ port: 3000 });
+
+// callback
+server.start(function() {
+  console.log('Server available at ' + server.info.uri);
+});
+
+// promise
+server.start()
+.then(function() {
+  console.log('Server available at ' + server.info.uri);
+});
+          </code></pre>
+          <ul>
+            <li>HAPI retourne des promesses si on ne passe pas de callback</li>
+            <li>Compatible avec Bluebird.promisifyAll(server)</li>
+          </ul>
+
+        </section>
+
+
+        <section>
+          <section>
+            <h2>Les connexions</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+server.connection();
+
+server.start(function() {
+  console.log('Server available at ' + server.info.host +
+    ':' + server.info.port);
+});
+            </code></pre>
+
+            <pre><code class="hljs" data-trim contenteditable>
+server.connection({ port: 3000 });
+
+server.start(function() {
+  console.log('Server available at ' + server.info.uri);
+});
+            </code></pre>
+            <p>server.info.uri = server.info.host + ':' + server.info.port</p>
+          </section>
+
+          <section>
+            <h2>Les connexions</h2>
+            <ul>
+              <li>Par défaut, écoute sur un port disponible (0) et sur toutes les interfaces réseaux disponibles (0.0.0.0)</li>
+              <li>De nombreuses options dont:
+                <ul>
+                  <li>port</li>
+                  <li>host: IP ou hostname public.
+                    <ul>
+                      <li>Spécifie les attributs: server.info.(host | uri)</li>
+                      <li>Par défaut: OS Hostname || 'localhost'</li>
+                      <li>Attention au exemple sur internet qui spécifie host, surtout si vous êtes sur docker !</li>
+                    </ul>
+                  </li>
+                  <li>adress: Restreint les adresses d'écoute
+                    <ul>
+                      <li>Valeur de 'host' si défini, 0.0.0.0 sinon</li>
+                    </ul>
+                  </li>
+                  <li>Pour le reste, RTFM</li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Les connexions - label</h2>
+            <p>Les labels permettent de récupérer un objet 'server' pour la ou les connexions souhaitées via server.select(), permettant de charger des plugins ou des routes spécifiques sur cette connexions.</p>
+
+            <pre><code class="hljs" data-trim contenteditable>
+var w = server.connection({ port: 9000, labels: ['webapp'] });
+var a = server.connection({ port: 3000, labels: ['admin'] });
+
+server.start(function () {
+  console.log('Webapp available at ' + w.info.uri);
+  console.log('Admin available at ' + a.info.uri);
+});
+            </code></pre>
+            <pre><code class="hljs" data-trim contenteditable>
+server.connection({ port: 80, labels: ['a', 'b'] });
+server.connection({ port: 8080, labels: ['a', 'c'] });
+server.connection({ port: 8081, labels: ['b', 'c'] });
+
+const c = server.select('c');     // 8080, 8081
+const a = server.select('a');     // 80, 8080
+const ac = a.select('c');         // 8080
+              </code></pre>
+          </section>
+
+        </section>
+
+        <section>
+          <section>
+            <h2>Les routes</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+  server.route({
+    path: '/',
+    method: 'GET',
+    handler: function(request, reply) {
+      reply('Hello World!')
+    }
+  })
+            </code></pre>
+
+            <pre><code class="hljs" data-trim contenteditable>
+server.route({
+  path: '/',
+  method: ['GET', 'POST'],
+  handler: function(request, reply) {
+    reply('Hello World!')
+  }
+})
+            </code></pre>
+          </section>
+
+
+          <section>
+            <h2>Les routes</h2>
+            <h4>Multi-Segment/Wildcard path</h4>
+            <pre><code class="hljs" data-trim contenteditable>
+path: '/filter/{value*2}'
+// match '/filter/&lt;firstValue&gt;/&lt;secondValue&gt;' only
+// value === [firstValue, secondValue]
+            </code></pre>
+            <p>Si 1 ou plus de 2 valeurs, cette route ne matchera pas</p>
+            <br>
+
+            <pre><code class="hljs" data-trim contenteditable>
+path: '/filter/{value*}'
+// match '/filter/f1' || '/filter/f1/f2' || '/filter/f1/f2/f3'
+// value === 'f1/f2/f3'
+            </code></pre>
+
+            <pre><code class="hljs" data-trim contenteditable>
+path: '/a{param?}/b', // partie d'un segment
+path: '/filter/{slug?}', // dernier paramètre
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Les routes - paramètres</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+server.route({
+  path: '/product/{id}',
+  method: 'POST',
+  handler: function(request, reply) {
+    var id = request.param.id;
+    var something = request.query.something;
+    var payload = request.payload; // json
+
+    reply('Hello World!');
+  }
+})
+
+// curl -H "Content-Type: application/json" -X POST
+-d '{"username":"xyz"}' http://localhost:3000/product/42?something=values
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Les routes - payload</h2>
+            <p>Par défaut, le payload est parsé en JSON et chargé en mémoire</p>
+            <pre><code class="hljs" data-trim contenteditable>
+server.route({
+  path: '/product/{id}',
+  method: 'POST',
+  handler: handler,
+  config: {
+    payload: {
+      output: ('data' | 'stream' | 'file'),
+      parse: (true | false | 'gunzip'),
+    }
+  }
+})
+            </code></pre>
+            <p>Ces options permettent entre autres de rediriger le stream du payload.</p>
+          </section>
+          <section>
+            <p>Uploader des images vers un services B2C, nécessitant d’être authentifié</p>
+            <pre><code class="hljs" data-trim contenteditable>
+function handler(req, reply) {
+  return authentication().then(function(cookie) {
+    var forwardUpload = request({ method: 'POST', url: URL_UPLOAD, jar: cookie })
+      .on('response, function(response) { reply(response); })
+      .on('error, function(error) { reply(error); });
+
+    req.payload.pipe(forwardUpload);
+  });
+}
+
+module.exports = {
+  method: ‘POST’,
+  path: '/upload',
+  handler: uploadHandler,
+  config: {
+    payload: {
+      output: 'stream',
+      parse: false,
+    },
+  },
+};
+          </code></pre>
+          </section>
+
+          <section>
+            <h2>Les routes - reply</h2>
+
+            <p>Interface permettant de gérer la reponse et d'intéragir dansle workflow du lifecycle de la requête. Reply prend de nombreux type en argument:</p>
+            <ul>
+              <li>null | undefined</li>
+              <li>string | boolean | number</li>
+              <li>Buffer object</li>
+              <li>Error object</li>
+              <li>Stream object</li>
+              <li>Promise object</li>
+              <li>any other object or array</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Les routes - reply</h2>
+            <p>reply prenant en argument des promesses, on peut donc traiter les erreurs en dehors des routes, soit onPreResponse du lifecycle, pour eviter la duplication de code</p>
+            <pre><code class="hljs" data-trim contenteditable>
+server.ext('onPreResponse', function(request, reply) {
+  if (!request.response.isBoom)
+    return reply.continue();
+
+  const error = request.response;
+
+  return reply({
+    code: error.code,
+    message: 'Internal Server Error',
+    data: error.data,
+  }).code(error.code);
+});
+            </code></pre>
+            <pre><code class="hljs" data-trim contenteditable>
+function handler(request, reply) {
+  var userId = request.param.id;
+  reply(getUserAsync(userId));
+}
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Les routes - reply</h2>
+            <p>Reply retour un objet 'response' ayant différentes méthodes</p>
+            <ul>
+              <li>code(statusCode)</li>
+              <li>etag(tag, options)</li>
+              <li>header(name, value, options)</li>
+              <li>redirect(uri)</li>
+              <li>ttl(msec)</li>
+              <li>type(mimeType)</li>
+              <li>...</li>
+            </ul>
+            <pre><code class="hljs" data-trim contenteditable>
+reply('Oops').code(404);
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Les routes - Request validation</h2>
+            <ul>
+              <li>Applicable sur : headers, query, params, payload, auth</li>
+              <li>true (default) | false | Joi validation object | function(value, options, next)</li>
+            </ul>
+            <pre><code class="hljs" data-trim contenteditable>
+server.route({
+  ...,
+  config: {
+    validate: {
+      params: {  // query, payload, headers
+        username: Joi.string().alphanum().min(3).max(30).required(),
+        password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/),
+        access_token: [Joi.string(), Joi.number()],
+        birthyear: Joi.number().integer().min(1900).max(2013),
+        email: Joi.string().email()
+      },
+      payload: {
+        user: Joi.object().keys({
+          a: Joi.string()
+        })
+      }
+    }
+  }
+});
+            </code></pre>
+          </section>
+
+        </section>
+
+        <section>
+          <section>
+            <h2>Les plugins</h2>
+            <ul>
+              <li>Nombreux plugins
+                <ul>
+                  <li>Joi (schema validation)</li>
+                  <li>glue (compose servers from manifests)</li>
+                  <li> inert (serving static content)</li>
+                  <li>ness (http socket)</li>
+                  <li>boom, poop, good, hoek, ...</li>
+                </ul>
+              </li>
+              <li>Permet d'isoler la logique métier</li>
+              <li>Configurable par connexions (avec les labels)</li>
+              <li>Dépendance inter plugin</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Les plugins</h2>
+            <p>Les plugins sont faciles à enregistrer et à configurer.</p>
+            <pre><code class="hljs" data-trim contenteditable>
+// sans option
+server.register(require('inert')); // promise
+server.register(require('inert'), callback); // callback
+
+// avec des options (utilisé par le plugin)
+server.register({
+  register: require('myplugin'),
+  options: { message: 'hello'},
+});
+
+// avec des options d'enregistrement (utilisé par le serveur et non le plugin)
+server.register(require('myplugin'), {
+  once: true,
+  select: ['frontend', 'admin'],
+  routes: {
+    prefix: '/plugins'
+    vhost: '',
+  }
+});
+            </code></pre>
+          </section>
+
+          <section>
+            <p>Il faut bien différencier les options passées à l'enregistrement du plugin et les options passées au plugin</p>
+
+            <p>Les options passées pour enregistrer le plugin (argument 'options' de 'register') sont utilisées par hapi et ne sont pas passées au plugin. Ces options permettent de sélectionner un serveur (ie, des connexions) en fonction des labels, ou de spécifier un vhost/prefix pour les routes enregistrées par ce plugin.</p>
+          </section>
+
+          <section>
+            <h2>Les plugins</h2>
+            <p>Facile à créer</p>
+            <pre><code class="hljs" data-trim contenteditable>
+const myPlugin = {
+  register: function (server, options, next) {
+    next();
+  }
+};
+myPlugin.register.attributes = {
+  name: 'myPlugin',
+  version: '1.0.0'
+}
+            </code></pre>
+
+            <pre><code class="hljs" data-trim contenteditable>
+// as an external plugin
+'use strict';
+
+exports.register = function (server, options, next) {
+  next();
+};
+
+exports.register.attributes = {
+  pkg: require('./package.json')
+};
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Sécurité</h2>
+            <ul>
+              <li>Basé sur le concept des schemes & strategies
+                <ul>
+                  <li>scheme: type d'authentification</li>
+                  <li>strategy: instance préconfiguré d'un scheme</li>
+                </ul>
+              </li>
+              <li>De nombreux schemes existants</li>
+              <li>Disponible via des plugins</li>
+              <li>Declaration d'un scheme/strategy simple dans hapi</li>
+              <li>Flexible: est configurable par route</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Ajouter une stratégie</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+server.register(require('hapi-auth-jwt'))
+.then(function() {
+server.auth.strategy('token', 'jwt', 'required', { key: server.settings.app.jwtSecret });
+});
+
+            </code></pre>
+            <pre><code class="hljs" data-trim contenteditable>
+server.auth.strategy(name, scheme, [mode], [options])
+            </code></pre>
+            <ul>
+              <li>name: nom de la strategie (hapi pouvant avoir plusieurs strategie, appliquée ou non sur les routes)</li>
+              <li>scheme: nom du scheme</li>
+              <li>mode: false, true, 'required', 'optional', 'try'</li>
+              <li>options: options passer directement au scheme</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Activer/désactiver une strategie sur une route</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+var route = {
+method: 'GET',
+path: '/ping',
+handler: pong,
+config: { auth: false }, // desactive l'authentication
+};
+            </code></pre>
+
+            <pre><code class="hljs" data-trim contenteditable>
+config: { auth: 'token' },
+            </code></pre>
+
+            <pre><code class="hljs" data-trim contenteditable>
+config: {
+auth: {
+  mode: 'required', // 'required', 'optional', 'try'
+  strategy: 'token', // if only 1 strategy
+  strategies: ['token', 'anotherStrategy'], // if more than 1 strategies
+  payload: 'required', // activate or disable payload authentication. true, 'required', 'optional'
+}
+},
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Scheme - DIY</h2>
+            <p>function (server, options) où options est l'objet passé lors de l'enregistrement de la stratégie</p>
+            <pre><code class="hljs" data-trim contenteditable>
+function mySchemeImpl(server, options) {
+var scheme = {
+  authenticate: function (request, reply) {
+    var req = request.raw.req;
+    var headerValue = req.headers['monToken'];
+
+    // Check if header is set
+    if (!headerValue) {
+        return reply(Boom.unauthorized('Bad authentication header'));
+    }
+
+    // check if header is valid
+    if (headerValue === 'token super secure !!!!') {
+      return reply.continue({ credentials: {} });
+    }
+
+    // Invalid token value
+    return reply(Boom.unauthorized('Invalid token'));
+  }
+};
+
+return scheme;
+};
+
+exports.register = function (server, options, next) {
+server.auth.scheme('myScheme', mySchemeImpl);
+next();
+};
+
+exports.register.attributes = {
+pkg: require('../package.json')
+};
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h2>Lifecycle</h2>
+
+          <p>Plusieurs points d'extension du lifecycle</p>
+          <ul>
+            <li>onRequest</li>
+            <li>onPreAuth</li>
+            <li>onPostAuth</li>
+            <li>onPreHandler</li>
+            <li>onPostHandler</li>
+            <li>onPreResponse</li>
+          </ul>
+          <pre><code class="hljs" data-trim contenteditable>
+server.ext('onRequest', function (request, reply) {
+
+  // Change all requests to '/test'
+  request.setUrl('/test');
+  return reply.continue();
+});
+          </code></pre>
+          <p>http://freecontent.manning.com/hapi-js-in-action-diagram/</p>
+          </section>
+
+        <section>
+          <h2>Etendre HAPI</h2>
+          <p>Les objets HAPI (request, reply, server) peuvent être enrichi via server.decorate</p>
+
+          <pre><code class="hljs" data-trim contenteditable>
+server.decorate server.decorate(‘reply’, ‘myError’, function (err) {
+  /* do something */
+});
+
+// dans un handler
+reply.myError(err);
+          </code></pre>
+
+        </section>
+        <section>
+        <h2>Mais aussi ...</h2>
+          <ul>
+            <li>server caching
+              <ul>
+                <li>Par defaut, cache ‘in memory’</li>
+                <li>Différents caches supportés: Memcached, mongodb, riak, redis, …</li>
+                <li>Déclarations de plusieurs caches</li>
+              </ul>
+            </li>
+            <li>client caching
+              <ul>
+                <li>Support des headers standard HTTP (Cache-Control, Last-Modified, E-Tag)</li>
+                <li>Options de cache sur les routes. Server.route({ … config: { cache: { expiresIn: 3600000 } } });</li>
+              </ul>
+            <li>logging</li>
+            <li>view</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Pour aller plus loin ...</h2>
+          <ul>
+            <li><a href="http://hapijs.com/tutorials">HAPI - Tutorials</a></li>
+            <li><a href="http://hapijs.com/resources">HAPI - Resources</a></li>
+            <li><a href="https://futurestud.io/blog/hapi-get-your-server-up-and-running">https://futurestud.io/blog/hapi-get-your-server-up-and-running</a></li>
+            <li><a href="https://github.com/mlfryman/walkthrough">https://github.com/mlfryman/walkthrough</a></li>
+
+          </ul>
+        </section>
+      </div>
+    </div>
+
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+      // More info https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        history: true,
+
+        // More info https://github.com/hakimel/reveal.js#dependencies
+        dependencies: [
+          { src: 'plugin/markdown/marked.js' },
+          { src: 'plugin/markdown/markdown.js' },
+          { src: 'plugin/notes/notes.js', async: true },
+          { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+        ]
+      });
+    </script>
+  </body>
+</html>
